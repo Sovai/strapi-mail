@@ -1,57 +1,76 @@
-# 🚀 Getting started with Strapi
+## 1. Setup email provider
 
-Strapi comes with a full featured [Command Line Interface](https://docs.strapi.io/dev-docs/cli) (CLI) which lets you scaffold and manage your project in seconds.
+- install nodemailer
 
-### `develop`
-
-Start your Strapi application with autoReload enabled. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-develop)
-
-```
-npm run develop
-# or
-yarn develop
+```bash
+npm i @strapi/provider-email-nodemailer
 ```
 
-### `start`
+- create a file in config/plugins.js
 
-Start your Strapi application with autoReload disabled. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-start)
-
+```js
+module.exports = ({ env }) => ({
+  email: {
+    config: {
+      provider: "nodemailer",
+      providerOptions: {
+        host: env("SMTP_HOST", "smtp.gmail.com"),
+        port: env("SMTP_PORT", 587),
+        auth: {
+          user: env("SMTP_USERNAME", "realEmail@gmail.com"),
+          pass: env("SMTP_PASSWORD", "16_char_gmail_app_password"), // generate in gmail security settings
+        },
+        // ... any custom nodemailer options
+      },
+      settings: {
+        defaultFrom: "displayFromEmail@gmail.com",
+        defaultReplyTo: "displayToEmail@gmail.com",
+      },
+    },
+  },
+});
 ```
-npm run start
-# or
-yarn start
+
+- test send email in strapi settings
+
+## 2. Fire email send when content type is created
+
+- create new content type (in this case I named it Email)
+- add necessary fields (name, email, message...)
+- create lifecircle hook in api/email/content-types/email/lifecycles.js
+
+```js
+module.exports = {
+  async afterCreate(event) {
+    console.log("afterCreate hook triggered", event.params.data);
+
+    try {
+      await strapi
+        .plugin("email")
+        .service("email")
+        .send({
+          to: "xxx@gmail.com", // or use event.params.data.to if your content-type includes recipient address
+          from: "xxx-fe@gmail.com", // the sender email address
+          subject: "New Email Content Created", // you can customize this
+          text: `A new email content from "${event.params.data.Name}" has been created.`, // customize as needed
+          html: `<h1>A new lead has contacted you on dotdotdot website contact form</h1>
+              <h2>Here are the details:</h2>
+              <p>Subject: ${event.params.data.Subject} </p>
+              <p>Name: ${event.params.data.Name}</p>
+              <p>Email: ${event.params.data.Email}</p>
+              <b>Story:</b>
+              <p>${event.params.Story}</p>
+              <br />
+              <br />
+              <br />
+              <p>Dotdotdot Contact form,</p>
+              `, // customize as needed
+        });
+    } catch (err) {
+      console.log("Error sending email:", err);
+    }
+  },
+};
 ```
 
-### `build`
-
-Build your admin panel. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-build)
-
-```
-npm run build
-# or
-yarn build
-```
-
-## ⚙️ Deployment
-
-Strapi gives you many possible deployment options for your project including [Strapi Cloud](https://cloud.strapi.io). Browse the [deployment section of the documentation](https://docs.strapi.io/dev-docs/deployment) to find the best solution for your use case.
-
-## 📚 Learn more
-
-- [Resource center](https://strapi.io/resource-center) - Strapi resource center.
-- [Strapi documentation](https://docs.strapi.io) - Official Strapi documentation.
-- [Strapi tutorials](https://strapi.io/tutorials) - List of tutorials made by the core team and the community.
-- [Strapi blog](https://strapi.io/blog) - Official Strapi blog containing articles made by the Strapi team and the community.
-- [Changelog](https://strapi.io/changelog) - Find out about the Strapi product updates, new features and general improvements.
-
-Feel free to check out the [Strapi GitHub repository](https://github.com/strapi/strapi). Your feedback and contributions are welcome!
-
-## ✨ Community
-
-- [Discord](https://discord.strapi.io) - Come chat with the Strapi community including the core team.
-- [Forum](https://forum.strapi.io/) - Place to discuss, ask questions and find answers, show your Strapi project and get feedback or just talk with other Community members.
-- [Awesome Strapi](https://github.com/strapi/awesome-strapi) - A curated list of awesome things related to Strapi.
-
----
-
-<sub>🤫 Psst! [Strapi is hiring](https://strapi.io/careers).</sub>
+- now when you create new content type, the email will be sent to the recipient address
