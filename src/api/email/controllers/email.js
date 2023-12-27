@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * inquery controller
+ * email controller
  */
 
 const { createCoreController } = require('@strapi/strapi').factories;
 
-module.exports = createCoreController('api::inquery.inquery');
+module.exports = createCoreController('api::email.email');

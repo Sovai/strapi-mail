@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * inquery router
+ * email router
  */
 
 const { createCoreRouter } = require('@strapi/strapi').factories;
 
-module.exports = createCoreRouter('api::inquery.inquery');
+module.exports = createCoreRouter('api::email.email');
